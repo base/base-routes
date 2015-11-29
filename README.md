@@ -1,6 +1,6 @@
 # base-routes [![NPM version](https://badge.fury.io/js/base-routes.svg)](http://badge.fury.io/js/base-routes)  [![Build Status](https://travis-ci.org/jonschlinkert/base-routes.svg)](https://travis-ci.org/jonschlinkert/base-routes)
 
-> Plugin for adding routes support to your `base` application.
+> Plugin for adding routes support to your `base` application. Requires templates support to work.
 
 ## Install
 
