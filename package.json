@@ -1,0 +1,27 @@
+{
+  "name": "base-routes",
+  "description": "Plugin for adding routes support to your `base` application.",
+  "version": "0.1.0",
+  "homepage": "https://github.com/jonschlinkert/base-routes",
+  "author": "Jon Schlinkert (https://github.com/jonschlinkert)",
+  "repository": "jonschlinkert/base-routes",
+  "bugs": {
+    "url": "https://github.com/jonschlinkert/base-routes/issues"
+  },
+  "license": "MIT",
+  "files": [
+    "index.js"
+  ],
+  "main": "index.js",
+  "engines": {
+    "node": ">=0.10.0"
+  },
+  "scripts": {
+    "test": "mocha"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "mocha": "*"
+  },
+  "keywords": []
+}
