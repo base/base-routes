@@ -10,7 +10,8 @@
   },
   "license": "MIT",
   "files": [
-    "index.js"
+    "index.js",
+    "utils.js"
   ],
   "main": "index.js",
   "engines": {
@@ -19,9 +20,23 @@
   "scripts": {
     "test": "mocha"
   },
-  "dependencies": {},
+  "dependencies": {
+    "en-route": "^0.7.3",
+    "lazy-cache": "^0.2.4"
+  },
   "devDependencies": {
+    "assemble-core": "^0.3.0",
     "mocha": "*"
   },
-  "keywords": []
+  "verb": {
+    "related": {
+      "list": [
+        "en-route",
+        "base-methods",
+        "base-plugins",
+        "base-options",
+        "templates"
+      ]
+    }
+  }
 }
