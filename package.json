@@ -2,11 +2,11 @@
   "name": "base-routes",
   "description": "Plugin for adding routes support to your `base` application. Requires templates support to work.",
   "version": "0.1.0",
-  "homepage": "https://github.com/jonschlinkert/base-routes",
+  "homepage": "https://github.com/node-base/base-routes",
   "author": "Jon Schlinkert (https://github.com/jonschlinkert)",
-  "repository": "jonschlinkert/base-routes",
+  "repository": "node-base/base-routes",
   "bugs": {
-    "url": "https://github.com/jonschlinkert/base-routes/issues"
+    "url": "https://github.com/node-base/base-routes/issues"
   },
   "license": "MIT",
   "files": [
@@ -21,24 +21,45 @@
     "test": "mocha"
   },
   "dependencies": {
-    "en-route": "^0.7.3",
-    "lazy-cache": "^0.2.4"
+    "debug": "^2.2.0",
+    "en-route": "^0.7.5",
+    "is-registered": "^0.1.3",
+    "is-valid-instance": "^0.1.0",
+    "lazy-cache": "^2.0.1"
   },
   "devDependencies": {
-    "assemble-core": "^0.3.0",
-    "engine-base": "^0.1.2",
-    "mocha": "*",
-    "should": "^7.1.1"
+    "base-app": "^0.2.2",
+    "gulp-format-md": "^0.1.9",
+    "mocha": "^2.4.5",
+    "should": "^8.3.1"
   },
+  "keywords": [
+    "base",
+    "routes"
+  ],
   "verb": {
     "related": {
       "list": [
-        "en-route",
-        "base-methods",
+        "base",
+        "base-option",
         "base-plugins",
-        "base-options",
+        "en-route",
         "templates"
       ]
-    }
+    },
+    "toc": true,
+    "layout": "default",
+    "tasks": [
+      "readme"
+    ],
+    "plugins": [
+      "gulp-format-md"
+    ],
+    "lint": {
+      "reflinks": true
+    },
+    "reflinks": [
+      "verb"
+    ]
   }
 }
