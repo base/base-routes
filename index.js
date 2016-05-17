@@ -1,127 +1,146 @@
-/*!
- * base-routes <https://github.com/jonschlinkert/base-routes>
- *
- * Copyright (c) 2015, Jon Schlinkert.
- * Licensed under the MIT License.
- */
-
 'use strict';
 
+var debug = require('debug')('base:routes');
 var utils = require('./utils');
 
 module.exports = function(options) {
   return function(app) {
+    if (!utils.isValid(app)) return;
 
     /**
-     * Add `Router` and `Route` to the prototype
-     */
-
-    app.Router = utils.routes.Router;
-    app.Route = utils.routes.Route;
-
-    /**
-     * Lazily initalize `router`, to allow options to
-     * be passed in after init.
-     */
-
-    app.lazyRouter = function(methods) {
-      if (typeof this.router === 'undefined') {
-        this.define('router', new this.Router({
-          methods: utils.methods
-        }));
-      }
-      if (typeof methods !== 'undefined') {
-        this.router.method(methods);
-      }
-    };
-
-    /**
-     * Handle a middleware `method` for `view`.
+     * The `Router` and `Route` classes are on the instance, in case they need
+     * to be accessed directly.
      *
      * ```js
-     * app.handle('customMethod', view, callback);
+     * var router = new app.Router();
+     * var route = new app.Route();
      * ```
-     * @name .handle
-     * @param {String} `method` Name of the router method to handle. See [router methods](./docs/router.md)
-     * @param {Object} `view` View object
-     * @param {Function} `callback` Callback function
-     * @return {Object}
      * @api public
      */
 
-    app.handle = function(method, view, locals, cb) {
-      if (typeof locals === 'function') {
-        cb = locals;
-        locals = {};
+    this.define('Router', utils.router.Router);
+    this.define('Route', utils.router.Route);
+
+    /**
+     * Handle a middleware `method` for `file`.
+     *
+     * ```js
+     * app.handle('customMethod', file, callback);
+     * ```
+     * @name .handle
+     * @param {String} `method` Name of the router method to handle. See [router methods](./docs/router.md)
+     * @param {Object} `file` View object
+     * @param {Function} `callback` Callback function
+     * @return {undefined}
+     * @api public
+     */
+
+    this.define('handle', function(method, file, next) {
+      debug('handling "%s" middleware for "%s"', method, file.basename);
+
+      if (typeof next !== 'function') {
+        throw new TypeError('expected callback to be a function');
       }
 
       this.lazyRouter();
-      if (!view.options.handled) {
-        view.options.handled = [];
+
+      file.options = file.options || {};
+      if (!file.options.handled) {
+        file.options.handled = [];
       }
 
-      if (typeof cb !== 'function') {
-        cb = this.handleError(method, view);
+      var cb = this.handleError(method, file, next);
+
+      file.options.method = method;
+      file.options.handled.push(method);
+      this.emit(method, file);
+
+      // if not an instance of `Templates`, or if we're inside a collection
+      // or the collection is not specified on view.options just handle the route and return
+      if (!this.isTemplates || !(this.isApp && file.options.collection)) {
+        this.router.handle(file, cb);
+        return;
       }
 
-      view.options.method = method;
-      view.options.handled.push(method);
-      this.router.handle(view, this.handleError(method, view, cb));
-      return this;
-    };
+      // handle the app routes first, then handle the collection routes
+      var collection = this[file.options.collection];
+
+      this.router.handle(file, function(err) {
+        if (err) return cb(err);
+        collection.handle(method, file, cb);
+      });
+    });
 
     /**
-     * Run the given middleware handler only if the view has not
-     * already been handled by the method.
+     * Run the given middleware handler only if the file has not already been handled
+     * by `method`.
      *
-     * @name .handleView
-     * @param  {Object} `method`
-     * @param  {Object} `view`
-     * @param  {Object} `locals`
+     * ```js
+     * app.handleOnce('onLoad', file, callback);
+     * ```
+     * @name .handleOnce
+     * @param  {Object} `method` The name of the handler method to call.
+     * @param  {Object} `file`
+     * @return {undefined}
+     * @api public
      */
 
-    app.handleView = function(method, view, locals/*, cb*/) {
-      if (!view.options.handled) {
-        view.options.handled = [];
+    this.define('handleOnce', function(method, file, cb) {
+      if (typeof cb !== 'function') {
+        throw new TypeError('expected callback to be a function');
       }
-      if (view.options.handled.indexOf(method) < 0) {
-        this.handle.apply(this, arguments);
-        this.emit(method, view, locals);
+      if (!file.options.handled) {
+        file.options.handled = [];
       }
-      return this;
-    };
+      if (file.options.handled.indexOf(method) === -1) {
+        this.handle(method, file, cb);
+        return;
+      }
+      cb(null, file);
+    });
 
     /**
      * Handle middleware errors.
      */
 
-    app.handleError = function(method, view, cb) {
-      if (typeof cb !== 'function') cb = utils.identity;
+    this.define('handleError', function(method, file, next) {
       var app = this;
       return function(err) {
         if (err) {
-          if (err._handled) return cb();
+          if (err._handled === true) {
+            next();
+            return;
+          }
+
           err._handled = true;
-          err.reason = app._name + '#handle' + method + ': ' + view.path;
-          app.emit('error', err);
-          return cb(err);
+          err.source = err.stack.split('\n')[1].trim();
+          err.reason = app._name + '#handle("' + method + '"): ' + file.path;
+
+          if (app.hasListeners('error')) {
+            app.emit('error', err);
+          }
+          if (typeof next !== 'function') throw err;
+          next(err);
+          return;
         }
-        cb(null, view);
+
+        if (typeof next !== 'function') {
+          throw new TypeError('expected a callback function');
+        }
+        next(null, file);
       };
-    };
+    });
 
     /**
-     * Create a new Route for the given path. Each route contains
-     * a separate middleware stack.
-     *
-     * See the [route API documentation][route-api] for details on
-     * adding handlers and middleware to routes.
+     * Create a new Route for the given path. Each route contains a separate middleware
+     * stack. See the [route API documentation][route-api] for details on adding handlers
+     * and middleware to routes.
      *
      * ```js
      * app.create('posts');
      * app.route(/blog/)
-     *   .all(function(view, next) {
-     *     // do something with view
+     *   .all(function(file, next) {
+     *     // do something with file
      *     next();
      *   });
      *
@@ -129,14 +148,42 @@ module.exports = function(options) {
      * ```
      * @name .route
      * @param {String} `path`
-     * @return {Object} `Route` for chaining
+     * @return {Object} Returns the instance for chaining.
      * @api public
      */
 
-    app.route = function(/*path*/) {
+    this.define('route', function(/*path*/) {
       this.lazyRouter();
       return this.router.route.apply(this.router, arguments);
-    };
+    });
+
+    /**
+     * Add callback triggers to route parameters, where `name` is the name of
+     * the parameter and `fn` is the callback function.
+     *
+     * ```js
+     * app.param('title', function(view, next, title) {
+     *   //=> title === 'foo.js'
+     *   next();
+     * });
+     *
+     * app.onLoad('/blog/:title', function(view, next) {
+     *   //=> view.path === '/blog/foo.js'
+     *   next();
+     * });
+     * ```
+     * @name .param
+     * @param {String} `name`
+     * @param {Function} `fn`
+     * @return {Object} Returns the instance for chaining.
+     * @api public
+     */
+
+    this.define('param', function(/*name, fn*/) {
+      this.lazyRouter();
+      this.router.param.apply(this.router, arguments);
+      return this;
+    });
 
     /**
      * Special route method that works just like the `router.METHOD()`
@@ -155,76 +202,73 @@ module.exports = function(options) {
      * @api public
      */
 
-    app.all = function(path/*, callback*/) {
+    this.define('all', function(path/*, callback*/) {
       var route = this.route(path);
       route.all.apply(route, [].slice.call(arguments, 1));
       return this;
-    };
+    });
 
     /**
-     * Add callback triggers to route parameters, where
-     * `name` is the name of the parameter and `fn` is the
-     * callback function.
+     * Add a router handler method to the instance. Interchangeable with
+     * the [handlers]() method.
      *
      * ```js
-     * app.param('title', function(view, next, title) {
-     *   //=> title === 'foo.js'
-     *   next();
-     * });
-     *
-     * app.onLoad('/blog/:title', function(view, next) {
-     *   //=> view.path === '/blog/foo.js'
-     *   next();
-     * });
+     * app.handler('onFoo');
+     * // or
+     * app.handler(['onFoo', 'onBar']);
      * ```
-     * @name .param
-     * @param {String} `name`
-     * @param {Function} `fn`
-     * @return {Object} Returns the instance of `Templates` for chaining.
+     * @name .handler
+     * @param  {String} `method` Name of the handler method to define.
+     * @return {Object} Returns the instance for chaining
      * @api public
      */
 
-    app.param = function(/*name, fn*/) {
-      this.lazyRouter();
-      this.router.param.apply(this.router, arguments);
-      return this;
-    };
+    this.define('handler', function(method) {
+      this.handlers(method);
+    });
 
     /**
-     * Add a router handler.
+     * Add one or more router handler methods to the instance.
      *
-     * @param  {String} `method` Method name.
+     * ```js
+     * app.handlers(['onFoo', 'onBar', 'onBaz']);
+     * // or
+     * app.handlers('onFoo');
+     * ```
+     * @name .handlers
+     * @param {Array|String} `methods` One or more method names to define.
+     * @return {Object} Returns the instance for chaining
+     * @api public
      */
 
-    app.handler = function(methods) {
-      this.handlers(methods);
-    };
+    this.define('handlers', function(methods) {
+      this.lazyRouter(methods);
+      mixinHandlers(methods);
+    });
 
     /**
-     * Add default Router handlers to Templates.
+     * Lazily initalize `router`, to allow options and custom methods to be
+     * define after instantiation.
      */
 
-    app.handlers = function(methods) {
-      this.lazyRouter(methods);
+    this.define('lazyRouter', function(methods) {
+      if (typeof this.router !== 'undefined') return;
+      this.define('router', new this.Router({
+        methods: utils.methods.concat(methods || [])
+      }));
+    });
 
+    // Mix router handler methods onto the intance
+    mixinHandlers(utils.methods);
+    function mixinHandlers(methods) {
       utils.arrayify(methods).forEach(function(method) {
-        this.define(method, function(path) {
-          var route = this.route(path);
+        app.define(method, function(path) {
+          var route = app.route(path);
           var args = [].slice.call(arguments, 1);
           route[method].apply(route, args);
-          return this;
-        }.bind(this));
-      }.bind(this));
-    };
-
-    // Add router methods to Templates
-    utils.methods.forEach(function(method) {
-      app[method] = function(path) {
-        var route = this.route(path);
-        var args = [].slice.call(arguments, 1);
-        route[method].apply(route, args);
-        return this;
-      };
-    });
+          return app;
+        });
+      });
+    }
   };
 };

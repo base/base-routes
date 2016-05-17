@@ -1,22 +1,7 @@
 'use strict';
 
-/**
- * Module dependencies
- */
-
+var debug = require('debug')('base:routes');
 var utils = require('lazy-cache')(require);
-
-/**
- * Temporarily re-assign `require` to trick browserify and
- * webpack into reconizing lazy dependencies.
- *
- * This tiny bit of ugliness has the huge dual advantage of
- * only loading modules that are actually called at some
- * point in the lifecycle of the application, whilst also
- * allowing browserify and webpack to find modules that
- * are depended on but never actually called.
- */
-
 var fn = require;
 require = utils;
 
@@ -24,17 +9,18 @@ require = utils;
  * Lazily required module dependencies
  */
 
-require('en-route', 'routes');
-
-/**
- * Restore `require`
- */
-
+require('en-route', 'router');
+require('is-registered');
+require('is-valid-instance');
 require = fn;
 
 /**
- * Default router methods
+ * Cast `val` to an array.
  */
+
+utils.arrayify = function(val) {
+  return val ? (Array.isArray(val) ? val : [val]) : [];
+};
 
 utils.methods = [
   'onLoad',
@@ -51,21 +37,15 @@ utils.methods = [
   'postWrite'
 ];
 
-/**
- * Return the given value as-is.
- */
-
-utils.identity = function(val) {
-  return val;
-};
-
-/**
- * Arrayify the given value by casting it to an array.
- */
-
-utils.arrayify = function(val) {
-  if (!val) return [];
-  return Array.isArray(val) ? val : [val];
+utils.isValid = function(app) {
+  if (!utils.isValidInstance(app)) {
+    return false;
+  }
+  if (utils.isRegistered(app, 'base-routes')) {
+    return false;
+  }
+  debug('loading routes methods');
+  return true;
 };
 
 /**
