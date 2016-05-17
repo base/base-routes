@@ -1,7 +1,7 @@
 {
   "name": "base-routes",
   "description": "Plugin for adding routes support to your `base` application. Requires templates support to work.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "homepage": "https://github.com/node-base/base-routes",
   "author": "Jon Schlinkert (https://github.com/jonschlinkert)",
   "repository": "node-base/base-routes",
