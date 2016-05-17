@@ -38,7 +38,7 @@ utils.methods = [
 ];
 
 utils.isValid = function(app) {
-  if (!utils.isValidInstance(app)) {
+  if (!utils.isValidInstance(app, ['app', 'collection', 'views'])) {
     return false;
   }
   if (utils.isRegistered(app, 'base-routes')) {
