@@ -4,7 +4,7 @@ var debug = require('debug')('base:routes');
 var utils = require('./utils');
 
 module.exports = function(options) {
-  return function(app) {
+  return function baseRoutes(app) {
     if (!utils.isValid(app)) return;
 
     /**
@@ -20,6 +20,23 @@ module.exports = function(options) {
 
     this.define('Router', utils.router.Router);
     this.define('Route', utils.router.Route);
+
+    /**
+     * Lazily initalize `router`, to allow options and custom methods to be
+     * define after instantiation.
+     */
+
+    this.define('lazyRouter', function(methods) {
+      if (typeof this.router === 'undefined') {
+        this.define('router', new this.Router({
+          methods: utils.methods
+        }));
+      }
+
+      if (typeof methods !== 'undefined') {
+        this.router.method(methods);
+      }
+    });
 
     /**
      * Handle a middleware `method` for `file`.
@@ -39,7 +56,11 @@ module.exports = function(options) {
       debug('handling "%s" middleware for "%s"', method, file.basename);
 
       if (typeof next !== 'function') {
-        throw new TypeError('expected callback to be a function');
+        next = function(err, file) {
+          app.handleError(method, file, function() {
+            throw err;
+          });
+        };
       }
 
       this.lazyRouter();
@@ -56,8 +77,8 @@ module.exports = function(options) {
       this.emit(method, file);
 
       // if not an instance of `Templates`, or if we're inside a collection
-      // or the collection is not specified on view.options just handle the route and return
-      if (!this.isTemplates || !(this.isApp && file.options.collection)) {
+      // or the collection is not specified on file.options just handle the route and return
+      if (!this.isTemplates || this.isCollection || !file.options.collection) {
         this.router.handle(file, cb);
         return;
       }
@@ -87,8 +108,13 @@ module.exports = function(options) {
 
     this.define('handleOnce', function(method, file, cb) {
       if (typeof cb !== 'function') {
-        throw new TypeError('expected callback to be a function');
+        cb = function(err, file) {
+          app.handleError(method, file, function() {
+            throw err;
+          });
+        };
       }
+
       if (!file.options.handled) {
         file.options.handled = [];
       }
@@ -203,6 +229,7 @@ module.exports = function(options) {
      */
 
     this.define('all', function(path/*, callback*/) {
+      this.lazyRouter();
       var route = this.route(path);
       route.all.apply(route, [].slice.call(arguments, 1));
       return this;
@@ -225,6 +252,7 @@ module.exports = function(options) {
 
     this.define('handler', function(method) {
       this.handlers(method);
+      return this;
     });
 
     /**
@@ -244,31 +272,22 @@ module.exports = function(options) {
     this.define('handlers', function(methods) {
       this.lazyRouter(methods);
       mixinHandlers(methods);
+      return this;
     });
 
-    /**
-     * Lazily initalize `router`, to allow options and custom methods to be
-     * define after instantiation.
-     */
-
-    this.define('lazyRouter', function(methods) {
-      if (typeof this.router !== 'undefined') return;
-      this.define('router', new this.Router({
-        methods: utils.methods.concat(methods || [])
-      }));
-    });
-
-    // Mix router handler methods onto the intance
-    mixinHandlers(utils.methods);
     function mixinHandlers(methods) {
       utils.arrayify(methods).forEach(function(method) {
         app.define(method, function(path) {
-          var route = app.route(path);
+          var route = this.route(path);
           var args = [].slice.call(arguments, 1);
           route[method].apply(route, args);
-          return app;
+          return this;
         });
       });
     }
+
+    // Mix router handler methods onto the intance
+    mixinHandlers(utils.methods);
+    return baseRoutes;
   };
 };

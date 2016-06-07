@@ -10,9 +10,16 @@ require = utils;
  */
 
 require('en-route', 'router');
-require('is-registered');
-require('is-valid-instance');
+require('is-valid-app');
 require = fn;
+
+utils.isValid = function(app) {
+  if (!utils.isValidApp(app, 'base-routes', ['app', 'collection', 'views', 'list'])) {
+    return false;
+  }
+  debug('loading routes methods');
+  return true;
+};
 
 /**
  * Cast `val` to an array.
@@ -36,17 +43,6 @@ utils.methods = [
   'preWrite',
   'postWrite'
 ];
-
-utils.isValid = function(app) {
-  if (!utils.isValidInstance(app, ['app', 'collection', 'views'])) {
-    return false;
-  }
-  if (utils.isRegistered(app, 'base-routes')) {
-    return false;
-  }
-  debug('loading routes methods');
-  return true;
-};
 
 /**
  * Expose `utils` modules
