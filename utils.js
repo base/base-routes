@@ -11,6 +11,7 @@ require = utils;
 
 require('en-route', 'router');
 require('is-valid-app');
+require('template-error', 'rethrow');
 require = fn;
 
 utils.isValid = function(app) {

@@ -11,6 +11,8 @@
   "license": "MIT",
   "files": [
     "index.js",
+    "LICENSE",
+    "README.md",
     "utils.js"
   ],
   "main": "index.js",
@@ -23,8 +25,9 @@
   "dependencies": {
     "debug": "^2.2.0",
     "en-route": "^0.7.5",
-    "is-valid-app": "^0.1.0",
-    "lazy-cache": "^2.0.1"
+    "is-valid-app": "^0.2.0",
+    "lazy-cache": "^2.0.1",
+    "template-error": "^0.1.2"
   },
   "devDependencies": {
     "base-app": "^0.2.2",
@@ -33,13 +36,23 @@
     "should": "^8.3.1"
   },
   "keywords": [
+    "api",
+    "app",
+    "application",
     "base",
     "baseplugin",
+    "building-blocks",
+    "create",
+    "framework",
     "middleware",
     "plugin",
+    "plugins",
     "router",
     "routes",
-    "routing"
+    "routing",
+    "tool",
+    "toolkit",
+    "tools"
   ],
   "verb": {
     "related": {

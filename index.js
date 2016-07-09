@@ -141,11 +141,23 @@ module.exports = function(options) {
           err._handled = true;
           err.source = err.stack.split('\n')[1].trim();
           err.reason = app._name + '#handle("' + method + '"): ' + file.path;
+          err.file = file;
 
           if (app.hasListeners('error')) {
             app.emit('error', err);
           }
           if (typeof next !== 'function') throw err;
+
+          if (err instanceof ReferenceError) {
+            try {
+              utils.rethrow(file.content, file.data);
+            } catch (e) {
+              console.log(e);
+              next(e);
+              return;
+            }
+          }
+
           next(err);
           return;
         }
