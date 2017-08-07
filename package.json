@@ -11,8 +11,6 @@
   "license": "MIT",
   "files": [
     "index.js",
-    "LICENSE",
-    "README.md",
     "utils.js"
   ],
   "main": "index.js",
@@ -23,23 +21,23 @@
     "test": "mocha"
   },
   "dependencies": {
-    "debug": "^2.2.0",
-    "en-route": "^0.7.5",
-    "is-valid-app": "^0.2.0",
-    "lazy-cache": "^2.0.1",
+    "debug": "^2.6.8",
+    "en-route": "^1.0.0",
+    "is-valid-app": "^0.3.0",
     "template-error": "^0.1.2"
   },
   "devDependencies": {
-    "base-app": "^0.2.2",
-    "gulp-format-md": "^0.1.9",
-    "mocha": "^2.4.5",
-    "should": "^8.3.1"
+    "base-app": "^0.2.6",
+    "gulp-format-md": "^1.0.0",
+    "mocha": "^3.5.0",
+    "should": "^11.2.1"
   },
   "keywords": [
     "api",
     "app",
     "application",
     "base",
+    "base-plugin",
     "baseplugin",
     "building-blocks",
     "create",
@@ -58,10 +56,8 @@
     "related": {
       "list": [
         "base",
-        "base-option",
-        "base-plugins",
         "en-route",
-        "templates"
+        "gulp-routes"
       ]
     },
     "toc": true,
@@ -76,7 +72,8 @@
       "reflinks": true
     },
     "reflinks": [
-      "verb"
+      "verb",
+      "base"
     ]
   }
 }
