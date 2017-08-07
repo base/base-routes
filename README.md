@@ -31,6 +31,10 @@ app.use(routes());
 
 ## API
 
+### [.Router](index.js#L23)
+
+The `Router` and `Route` classes are on the `app` instance, in case they need to be accessed directly.
+
 **Example**
 
 ```js
@@ -38,7 +42,7 @@ var router = new app.Router();
 var route = new app.Route();
 ```
 
-### [.handle](index.js#L57)
+### [.handle](index.js#L54)
 
 Handle middleware `method` for the given `file`.
 
@@ -55,7 +59,7 @@ Handle middleware `method` for the given `file`.
 app.handle('methodName', file, next);
 ```
 
-### [.handleOnce](index.js#L112)
+### [.handleOnce](index.js#L114)
 
 Run the given middleware handler only if the file has not already been handled by `method`.
 
@@ -73,7 +77,7 @@ app.handleOnce(method, file, callback);
 app.handleOnce('onLoad', file, callback);
 ```
 
-### [.route](index.js#L190)
+### [.route](index.js#L200)
 
 Create a new Route for the given path. Each route contains a separate middleware stack. See the [en-route](https://github.com/jonschlinkert/en-route) API documentation for details on adding handlers and middleware to routes.
 
@@ -95,7 +99,7 @@ app.route(/blog/)
 app.post('whatever', {path: 'blog/foo.bar', content: 'bar baz'});
 ```
 
-### [.param](index.js#L218)
+### [.param](index.js#L228)
 
 Add callback triggers to route parameters, where `name` is the name of the parameter and `fn` is the callback function.
 
@@ -119,7 +123,7 @@ app.onLoad('/blog/:title', function(view, next) {
 });
 ```
 
-### [.all](index.js#L242)
+### [.all](index.js#L252)
 
 Special route method that works just like the `router.METHOD()` methods, except that it matches all verbs.
 
@@ -138,7 +142,7 @@ app.all(/\.hbs$/, function(view, next) {
 });
 ```
 
-### [.handler](index.js#L264)
+### [.handler](index.js#L274)
 
 Add a router handler method to the instance. Interchangeable with the [handlers](#handlers) method.
 
@@ -155,7 +159,7 @@ app.handler('onFoo');
 app.handler(['onFoo', 'onBar']);
 ```
 
-### [.handlers](index.js#L283)
+### [.handlers](index.js#L293)
 
 Add one or more router handler methods to the instance.
 
