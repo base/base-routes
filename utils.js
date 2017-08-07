@@ -1,21 +1,15 @@
 'use strict';
 
 var debug = require('debug')('base:routes');
-var utils = require('lazy-cache')(require);
-var fn = require;
-require = utils;
+var isValidApp = require('is-valid-app');
+var utils = module.exports;
 
 /**
- * Lazily required module dependencies
+ * Returns true if `app` is valid and is not already registered.
  */
 
-require('en-route', 'router');
-require('is-valid-app');
-require('template-error', 'rethrow');
-require = fn;
-
 utils.isValid = function(app) {
-  if (!utils.isValidApp(app, 'base-routes', ['app', 'collection', 'views', 'list'])) {
+  if (!isValidApp(app, 'base-routes', ['app', 'collection', 'views', 'list'])) {
     return false;
   }
   debug('loading routes methods');
@@ -29,6 +23,10 @@ utils.isValid = function(app) {
 utils.arrayify = function(val) {
   return val ? (Array.isArray(val) ? val : [val]) : [];
 };
+
+/**
+ * Default router methods
+ */
 
 utils.methods = [
   'onLoad',

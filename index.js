@@ -1,6 +1,8 @@
 'use strict';
 
 var debug = require('debug')('base:routes');
+var rethrow = require('template-error');
+var router = require('en-route');
 var utils = require('./utils');
 
 module.exports = function(options) {
@@ -8,8 +10,8 @@ module.exports = function(options) {
     if (!utils.isValid(app)) return;
 
     /**
-     * The `Router` and `Route` classes are on the instance, in case they need
-     * to be accessed directly.
+     * The `Router` and `Route` classes are on the `app` instance,
+     * in case they need to be accessed directly.
      *
      * ```js
      * var router = new app.Router();
@@ -18,12 +20,12 @@ module.exports = function(options) {
      * @api public
      */
 
-    this.define('Router', utils.router.Router);
-    this.define('Route', utils.router.Route);
+    this.define('Router', router.Router);
+    this.define('Route', router.Route);
 
     /**
-     * Lazily initalize `router`, to allow options and custom methods to be
-     * define after instantiation.
+     * Lazily initalize `router`, to allow options and
+     * custom methods to be defined after instantiation.
      */
 
     this.define('lazyRouter', function(methods) {
@@ -39,21 +41,22 @@ module.exports = function(options) {
     });
 
     /**
-     * Handle a middleware `method` for `file`.
+     * Handle middleware `method` for the given `file`.
      *
      * ```js
-     * app.handle('customMethod', file, callback);
+     * app.handle('methodName', file, next);
      * ```
      * @name .handle
-     * @param {String} `method` Name of the router method to handle. See [router methods](./docs/router.md)
+     * @param {String} `methodName` Name of the router method to handle.
      * @param {Object} `file` View object
-     * @param {Function} `callback` Callback function
+     * @param {Function} `next` Callback function
      * @return {undefined}
      * @api public
      */
 
     this.define('handle', function(method, file, next) {
       debug('handling "%s" middleware for "%s"', method, file.basename);
+      this.lazyRouter();
 
       if (typeof next !== 'function') {
         next = function(err, file) {
@@ -62,8 +65,6 @@ module.exports = function(options) {
           });
         };
       }
-
-      this.lazyRouter();
 
       file.options = file.options || {};
       if (!file.options.handled) {
@@ -93,10 +94,12 @@ module.exports = function(options) {
     });
 
     /**
-     * Run the given middleware handler only if the file has not already been handled
-     * by `method`.
+     * Run the given middleware handler only if the file has not
+     * already been handled by `method`.
      *
      * ```js
+     * app.handleOnce(method, file, callback);
+     * // example
      * app.handleOnce('onLoad', file, callback);
      * ```
      * @name .handleOnce
@@ -107,17 +110,10 @@ module.exports = function(options) {
      */
 
     this.define('handleOnce', function(method, file, cb) {
-      if (typeof cb !== 'function') {
-        cb = function(err, file) {
-          app.handleError(method, file, function() {
-            throw err;
-          });
-        };
-      }
-
       if (!file.options.handled) {
         file.options.handled = [];
       }
+
       if (file.options.handled.indexOf(method) === -1) {
         this.handle(method, file, cb);
         return;
@@ -150,7 +146,7 @@ module.exports = function(options) {
 
           if (err instanceof ReferenceError) {
             try {
-              utils.rethrow(file.content, file.data);
+              rethrow(file.content, file.data);
             } catch (e) {
               console.log(e);
               next(e);
@@ -170,9 +166,10 @@ module.exports = function(options) {
     });
 
     /**
-     * Create a new Route for the given path. Each route contains a separate middleware
-     * stack. See the [route API documentation][route-api] for details on adding handlers
-     * and middleware to routes.
+     * Create a new Route for the given path. Each route
+     * contains a separate middleware stack. See the [en-route][]
+     * API documentation for details on adding handlers and
+     * middleware to routes.
      *
      * ```js
      * app.create('posts');
@@ -196,8 +193,9 @@ module.exports = function(options) {
     });
 
     /**
-     * Add callback triggers to route parameters, where `name` is the name of
-     * the parameter and `fn` is the callback function.
+     * Add callback triggers to route parameters, where
+     * `name` is the name of the parameter and `fn` is the
+     * callback function.
      *
      * ```js
      * app.param('title', function(view, next, title) {
@@ -224,8 +222,9 @@ module.exports = function(options) {
     });
 
     /**
-     * Special route method that works just like the `router.METHOD()`
-     * methods, except that it matches all verbs.
+     * Special route method that works just like the
+     * `router.METHOD()` methods, except that it matches
+     * all verbs.
      *
      * ```js
      * app.all(/\.hbs$/, function(view, next) {
@@ -248,8 +247,8 @@ module.exports = function(options) {
     });
 
     /**
-     * Add a router handler method to the instance. Interchangeable with
-     * the [handlers]() method.
+     * Add a router handler method to the instance. Interchangeable
+     * with the [handlers]() method.
      *
      * ```js
      * app.handler('onFoo');

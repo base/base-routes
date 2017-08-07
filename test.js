@@ -18,20 +18,28 @@ describe('routes', function() {
     it('should create a route for the given path:', function(cb) {
       var count = 0;
 
-      app.on('all', function(msg) {
-        assert.equal(msg, 'done');
+      app.once('onLoad', function(view) {
         count++;
+        assert.deepEqual(view, {
+          path: 'blog/foo.js',
+          options: {
+            handled: [ 'onLoad' ],
+            method: 'onLoad'
+          }
+        });
       });
 
       app.route('blog/:title')
-        .all(function(view, next) {
-          app.emit('all', 'done');
+        .onLoad(function(view, next) {
           count++;
           next();
         });
 
       app.handle('onLoad', { path: 'blog/foo.js' }, function(err) {
-        if (err) return cb(err);
+        if (err) {
+          cb(err);
+          return;
+        }
         assert.equal(count, 2);
         cb();
       });
@@ -40,9 +48,15 @@ describe('routes', function() {
     it('should emit events when a route method is called:', function(cb) {
       var count = 0;
 
-      app.on('onLoad', function(view) {
-        assert.equal(view.path, 'blog/foo.js');
+      app.once('onLoad', function(view) {
         count++;
+        assert.deepEqual(view, {
+          path: 'blog/foo.js',
+          options: {
+            handled: [ 'onLoad' ],
+            method: 'onLoad'
+          }
+        });
       });
 
       app.param('title', function(view, next, title) {
@@ -58,13 +72,16 @@ describe('routes', function() {
       });
 
       app.handle('onLoad', {path: 'blog/foo.js'}, function(err) {
-        if (err) return cb(err);
+        if (err) {
+          cb(err);
+          return;
+        }
         assert.equal(count, 3);
         cb();
       });
     });
 
-    it('should emit errors', function(cb) {
+    it('should emit and handle errors', function(cb) {
       var count = 0;
 
       app.on('error', function(err) {
@@ -108,14 +125,6 @@ describe('routes', function() {
       assert.equal(route.stack.length, 1);
     });
   });
-});
-
-describe('routes', function() {
-  beforeEach(function() {
-    app = new Base();
-    app.isApp = true;
-    app.use(routes());
-  });
 
   describe('params', function() {
     it('should call param function when routing', function(cb) {
@@ -134,7 +143,10 @@ describe('routes', function() {
       });
 
       app.router.handle({ path: '/foo/123/bar' }, function(err) {
-        if (err) return cb(err);
+        if (err) {
+          cb(err);
+          return;
+        }
         assert.equal(count, 2);
         cb();
       });
