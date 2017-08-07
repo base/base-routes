@@ -20,8 +20,8 @@ module.exports = function(options) {
      * @api public
      */
 
-    this.define('Router', router.Router);
-    this.define('Route', router.Route);
+    this.Router = router.Router;
+    this.Route = router.Route;
 
     /**
      * Lazily initalize `router`, to allow options and
@@ -29,12 +29,9 @@ module.exports = function(options) {
      */
 
     this.define('lazyRouter', function(methods) {
-      if (typeof this.router === 'undefined') {
-        this.define('router', new this.Router({
-          methods: utils.methods
-        }));
+      if (this.router == null) {
+        this.router = new this.Router({methods: utils.methods});
       }
-
       if (typeof methods !== 'undefined') {
         this.router.method(methods);
       }
@@ -71,11 +68,13 @@ module.exports = function(options) {
         file.options.handled = [];
       }
 
-      var cb = this.handleError(method, file, next);
-
+      // set router method on file.options
       file.options.method = method;
       file.options.handled.push(method);
       this.emit(method, file);
+
+      // create callback
+      var cb = this.handleError(method, file, next);
 
       // if not an instance of `Templates`, or if we're inside a collection
       // or the collection is not specified on file.options just handle the route and return
@@ -88,7 +87,10 @@ module.exports = function(options) {
       var collection = this[file.options.collection];
 
       this.router.handle(file, function(err) {
-        if (err) return cb(err);
+        if (err) {
+          cb(err);
+          return;
+        }
         collection.handle(method, file, cb);
       });
     });
@@ -109,16 +111,20 @@ module.exports = function(options) {
      * @api public
      */
 
-    this.define('handleOnce', function(method, file, cb) {
+    this.define('handleOnce', function(method, file, next) {
       if (!file.options.handled) {
         file.options.handled = [];
       }
 
+      if (typeof next !== 'function') {
+        next = file.next;
+      }
+
       if (file.options.handled.indexOf(method) === -1) {
-        this.handle(method, file, cb);
+        this.handle(method, file, next);
         return;
       }
-      cb(null, file);
+      next(null, file);
     });
 
     /**
@@ -128,6 +134,12 @@ module.exports = function(options) {
     this.define('handleError', function(method, file, next) {
       var app = this;
       return function(err) {
+        next = next || file.next;
+
+        if (typeof next !== 'function') {
+          throw new TypeError('expected a callback function');
+        }
+
         if (err) {
           if (err._handled === true) {
             next();
@@ -142,13 +154,15 @@ module.exports = function(options) {
           if (app.hasListeners('error')) {
             app.emit('error', err);
           }
-          if (typeof next !== 'function') throw err;
+
+          if (typeof next !== 'function') {
+            throw err;
+          }
 
           if (err instanceof ReferenceError) {
             try {
               rethrow(file.content, file.data);
             } catch (e) {
-              console.log(e);
               next(e);
               return;
             }
@@ -156,10 +170,6 @@ module.exports = function(options) {
 
           next(err);
           return;
-        }
-
-        if (typeof next !== 'function') {
-          throw new TypeError('expected a callback function');
         }
         next(null, file);
       };
