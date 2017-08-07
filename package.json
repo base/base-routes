@@ -22,7 +22,7 @@
   },
   "dependencies": {
     "debug": "^2.6.8",
-    "en-route": "^1.0.0",
+    "en-route": "^1.0.1",
     "is-valid-app": "^0.3.0",
     "template-error": "^0.1.2"
   },
